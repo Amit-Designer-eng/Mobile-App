@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wardrobing Risk Engine - Customer Fraud Detection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .section-card {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.07);
+            border: 1px solid #e5e7eb;
+        }
+        
+        .score-display {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 32px;
+            border-radius: 20px;
+            text-align: center;
+            box-shadow: 0 10px 40px rgba(102, 126, 234, 0.4);
+        }
+        
+        .risk-low { background: linear-gradient(135deg, #10b981 0%, #059669 100%); }
+        .risk-medium { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); }
+        .risk-high { background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%); }
+        .risk-severe { background: linear-gradient(135deg, #7f1d1d 0%, #450a0a 100%); }
+        
+        .input-group label {
+            display: block;
+            font-weight: 600;
+            color: #374151;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        
+        .input-group select, .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: all 0.2s;
+        }
+        
+        .input-group select:focus, .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .calculate-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 16px 32px;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 16px;
+            border: none;
+            cursor: pointer;
+            width: 100%;
+            transition: transform 0.2s;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+        }
+        
+        .calculate-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        .calculate-btn:active {
+            transform: translateY(0);
+        }
+        
+        .breakdown-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: #f9fafb;
+            border-radius: 8px;
+            margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+        }
+        
+        .breakdown-item span:first-child {
+            font-weight: 500;
+            color: #374151;
+        }
+        
+        .breakdown-item span:last-child {
+            font-weight: 700;
+            color: #667eea;
+        }
+        
+        .disclaimer {
+            background: #fef3c7;
+            border: 2px solid #fbbf24;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            align-items: start;
+        }
+        
+        .disclaimer-icon {
+            color: #f59e0b;
+            flex-shrink: 0;
+        }
+        
+        .disclaimer-text {
+            color: #92400e;
+            font-size: 13px;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body class="p-6">
+
+    <div class="max-w-5xl mx-auto">
+        
+        <!-- Header -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white mb-3">🔍 Wardrobing Risk Engine</h1>
+            <p class="text-white/90 text-lg">Customer Return Fraud Detection System</p>
+        </div>
+
+        <!-- Disclaimer -->
+        <div class="disclaimer">
+            <div class="disclaimer-icon">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+            </div>
+            <div class="disclaimer-text">
+                <strong>Demo Mode:</strong> This is a sample interface for testing the risk engine. In production, the system will automatically fetch data from customer history, payment records, and pickup agent notes without manual input.
+            </div>
+        </div>
+
+        <div class="grid md:grid-cols-2 gap-6">
+            
+            <!-- Left Column: Input Form -->
+            <div>
+                
+                <!-- Section A: Return Behaviour -->
+                <div class="section-card">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-purple-100 text-purple-600 rounded-full flex items-center justify-center text-sm font-bold">A</span>
+                        Return Behaviour (50 points)
+                    </h2>
+                    
+                    <div class="input-group mb-4">
+                        <label>1. Return Rate by Volume (max 15)</label>
+                        <select id="returnVolume">
+                            <option value="0">0-20% returns</option>
+                            <option value="4">21-35% returns</option>
+                            <option value="8">35-50% returns</option>
+                            <option value="12">51-70% returns</option>
+                            <option value="15">&gt;70% returns</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group mb-4">
+                        <label>2. Return Rate by Value (max 15)</label>
+                        <select id="returnValue">
+                            <option value="0">0-20% by value</option>
+                            <option value="4">21-35% by value</option>
+                            <option value="8">35-50% by value</option>
+                            <option value="12">51-70% by value</option>
+                            <option value="15">&gt;70% by value</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group mb-4">
+                        <label>3. Claim Type Pattern (max 10)</label>
+                        <select id="claimPattern">
+                            <option value="0">No suspicious claims</option>
+                            <option value="5">2 times damaged claims</option>
+                            <option value="8">3-5 times same reason</option>
+                            <option value="10">5+ times repeated reason</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>4. Computer Vision QC Score (max 10)</label>
+                        <select id="cvScore">
+                            <option value="0">&gt;85 (Excellent)</option>
+                            <option value="5">65-85 (Good)</option>
+                            <option value="8">&lt;65 (Poor)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Section B: Identity & Payment -->
+                <div class="section-card">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center text-sm font-bold">B</span>
+                        Identity & Payment (20 points)
+                    </h2>
+                    
+                    <div class="input-group mb-4">
+                        <label>1. Refund Method Risk (max 10)</label>
+                        <select id="refundMethod">
+                            <option value="0">Wallet/Store Credit</option>
+                            <option value="4">Gift Card</option>
+                            <option value="7">Same UPI/Bank</option>
+                            <option value="10">Different UPI/Bank</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>2. Address Distance (max 10)</label>
+                        <select id="addressBehavior">
+                            <option value="0">Same address, stable</option>
+                            <option value="4">Different address but same city</option>
+                            <option value="7">Different cities</option>
+                            <option value="10">Inconsistent addresses</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Section C: Pickup Agent Notes -->
+                <div class="section-card">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-yellow-100 text-yellow-600 rounded-full flex items-center justify-center text-sm font-bold">C</span>
+                        Pickup Agent Notes (20 points)
+                    </h2>
+                    
+                    <div class="input-group mb-4">
+                        <label>1. Negative Notes (max 10)</label>
+                        <select id="agentNotes">
+                            <option value="0">No issues</option>
+                            <option value="4">Severely Marked Minor</option>
+                            <option value="7">Severely Marked Medium</option>
+                            <option value="10">Severely Marked High</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>2. Past QC Failures (max 8)</label>
+                        <select id="qcFailures">
+                            <option value="0">All passed</option>
+                            <option value="4">1 failed</option>
+                            <option value="7">2 failed</option>
+                            <option value="10">3+ failed</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Section D: Device & Account -->
+                <div class="section-card">
+                    <h2 class="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
+                        <span class="w-8 h-8 bg-green-100 text-green-600 rounded-full flex items-center justify-center text-sm font-bold">D</span>
+                        Device & Account (10 points)
+                    </h2>
+                    
+                    <div class="input-group mb-4">
+                        <label>1. Device Sharing Risk (max 6)</label>
+                        <select id="deviceSharing">
+                            <option value="0">Only 1 account</option>
+                            <option value="2">2 accounts</option>
+                            <option value="4">3-5 accounts</option>
+                            <option value="6">5+ accounts</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label>2. Account Age (max 4)</label>
+                        <select id="accountAge">
+                            <option value="0">&gt;1 year</option>
+                            <option value="2">6-12 months</option>
+                            <option value="4">&lt;6 months</option>
+                        </select>
+                    </div>
+                </div>
+
+                <button onclick="calculateRisk()" class="calculate-btn">
+                    Calculate Risk Score
+                </button>
+
+            </div>
+
+            <!-- Right Column: Results -->
+            <div>
+                <div id="resultsSection" style="display: none;">
+                    
+                    <!-- Score Display -->
+                    <div class="score-display mb-6" id="scoreCard">
+                        <div class="text-6xl font-bold mb-2" id="totalScore">0</div>
+                        <div class="text-xl font-semibold mb-4" id="riskLevel">LOW RISK</div>
+                        <div class="text-sm opacity-90" id="actionText">Instant approval for return</div>
+                    </div>
+
+                    <!-- Breakdown -->
+                    <div class="section-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Score Breakdown</h3>
+                        <div class="breakdown-item">
+                            <span>A. Return Behaviour</span>
+                            <span id="scoreA">0 pts</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>B. Identity & Payment</span>
+                            <span id="scoreB">0 pts</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>C. Pickup Agent Notes</span>
+                            <span id="scoreC">0 pts</span>
+                        </div>
+                        <div class="breakdown-item">
+                            <span>D. Device & Account</span>
+                            <span id="scoreD">0 pts</span>
+                        </div>
+                    </div>
+
+                    <!-- Risk Interpretation -->
+                    <div class="section-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-4">Risk Assessment</h3>
+                        <div id="riskInterpretation"></div>
+                    </div>
+
+                    <!-- Recommended Actions -->
+                    <div class="section-card">
+                        <h3 class="text-lg font-bold text-gray-800 mb-3">Recommended Actions</h3>
+                        <div id="recommendedActions"></div>
+                    </div>
+                </div>
+
+                <!-- Initial Message -->
+                <div id="initialMessage" class="section-card text-center py-12">
+                    <svg class="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <p class="text-gray-500 text-lg font-medium">Fill the form and calculate risk score</p>
+                    <p class="text-gray-400 text-sm mt-2">Results will appear here</p>
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <script>
+        function calculateRisk() {
+            // Get all values
+            const returnVolume = parseInt(document.getElementById('returnVolume').value);
+            const returnValue = parseInt(document.getElementById('returnValue').value);
+            const claimPattern = parseInt(document.getElementById('claimPattern').value);
+            const cvScore = parseInt(document.getElementById('cvScore').value);
+            
+            const refundMethod = parseInt(document.getElementById('refundMethod').value);
+            const addressBehavior = parseInt(document.getElementById('addressBehavior').value);
+            
+            const agentNotes = parseInt(document.getElementById('agentNotes').value);
+            const qcFailures = parseInt(document.getElementById('qcFailures').value);
+            
+            const deviceSharing = parseInt(document.getElementById('deviceSharing').value);
+            const accountAge = parseInt(document.getElementById('accountAge').value);
+
+            // Calculate section scores
+            const scoreA = returnVolume + returnValue + claimPattern + cvScore;
+            const scoreB = refundMethod + addressBehavior;
+            const scoreC = agentNotes + qcFailures;
+            const scoreD = deviceSharing + accountAge;
+
+            const totalScore = scoreA + scoreB + scoreC + scoreD;
+
+            // Display results
+            document.getElementById('initialMessage').style.display = 'none';
+            document.getElementById('resultsSection').style.display = 'block';
+
+            document.getElementById('totalScore').textContent = totalScore;
+            document.getElementById('scoreA').textContent = scoreA + ' pts';
+            document.getElementById('scoreB').textContent = scoreB + ' pts';
+            document.getElementById('scoreC').textContent = scoreC + ' pts';
+            document.getElementById('scoreD').textContent = scoreD + ' pts';
+
+            // Determine risk level
+            let riskLevel, riskClass, actionText, interpretation, actions;
+
+            if (totalScore <= 25) {
+                riskLevel = "LOW RISK";
+                riskClass = "risk-low";
+                actionText = "✅ Instant approval for return";
+                interpretation = `
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        This customer shows <strong>low risk behavior</strong>. Return patterns are normal, 
+                        and there are no significant red flags. The account demonstrates healthy purchasing 
+                        and return activity within acceptable ranges.
+                    </p>
+                `;
+                actions = `
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li class="flex gap-2">
+                            <span class="text-green-500">✓</span>
+                            <span>Approve return immediately without additional verification</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-green-500">✓</span>
+                            <span>Process refund through standard workflow</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-green-500">✓</span>
+                            <span>No additional documentation required</span>
+                        </li>
+                    </ul>
+                `;
+            } else if (totalScore <= 55) {
+                riskLevel = "MEDIUM RISK";
+                riskClass = "risk-medium";
+                actionText = "📸 5 photos + Reverse shipping charge required";
+                interpretation = `
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        This customer shows <strong>moderate risk indicators</strong>. While not severely 
+                        problematic, there are patterns that warrant additional verification to protect 
+                        against potential wardrobing fraud.
+                    </p>
+                `;
+                actions = `
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li class="flex gap-2">
+                            <span class="text-yellow-500">⚠</span>
+                            <span>Request 5 detailed photos (front, back, tags, close-up, packaging)</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-yellow-500">⚠</span>
+                            <span>Apply reverse shipping charge</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-yellow-500">⚠</span>
+                            <span>Manual review by QC team before approval</span>
+                        </li>
+                    </ul>
+                `;
+            } else if (totalScore <= 75) {
+                riskLevel = "HIGH RISK";
+                riskClass = "risk-high";
+                actionText = "🎥 3 photos + video + Extra shipping + Review";
+                interpretation = `
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        This customer exhibits <strong>high-risk behavior patterns</strong> consistent with 
+                        potential wardrobing fraud. Multiple red flags are present across return frequency, 
+                        payment methods, and quality control failures.
+                    </p>
+                `;
+                actions = `
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li class="flex gap-2">
+                            <span class="text-red-500">✖</span>
+                            <span>Require 3 photos + video proof showing item condition and tags</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-500">✖</span>
+                            <span>Apply higher reverse shipping charge + processing fee</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-500">✖</span>
+                            <span>Mandatory senior team review before approval</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-500">✖</span>
+                            <span>Flag account for monitoring on future orders</span>
+                        </li>
+                    </ul>
+                `;
+            } else {
+                riskLevel = "SEVERE RISK";
+                riskClass = "risk-severe";
+                actionText = "🚫 Return restricted - Human intervention needed";
+                interpretation = `
+                    <p class="text-sm text-gray-600 leading-relaxed">
+                        This customer presents <strong>severe fraud risk</strong>. The behavior strongly 
+                        suggests systematic wardrobing or return abuse. Immediate escalation and 
+                        potential account restriction are recommended.
+                    </p>
+                `;
+                actions = `
+                    <ul class="text-sm text-gray-600 space-y-2">
+                        <li class="flex gap-2">
+                            <span class="text-red-900">⛔</span>
+                            <span><strong>Block return temporarily</strong> pending investigation</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-900">⛔</span>
+                            <span>Escalate to fraud prevention team immediately</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-900">⛔</span>
+                            <span>Conduct full account audit and history review</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-900">⛔</span>
+                            <span>Consider account suspension or permanent restrictions</span>
+                        </li>
+                        <li class="flex gap-2">
+                            <span class="text-red-900">⛔</span>
+                            <span>Legal team consultation for repeat offenders</span>
+                        </li>
+                    </ul>
+                `;
+            }
+
+            // Apply styling and content
+            const scoreCard = document.getElementById('scoreCard');
+            scoreCard.className = `score-display mb-6 ${riskClass}`;
+            document.getElementById('riskLevel').textContent = riskLevel;
+            document.getElementById('actionText').textContent = actionText;
+            document.getElementById('riskInterpretation').innerHTML = interpretation;
+            document.getElementById('recommendedActions').innerHTML = actions;
+
+            // Scroll to results
+            document.getElementById('resultsSection').scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+    </script>
+
+</body>
+</html>
